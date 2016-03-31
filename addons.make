@@ -1,0 +1,5 @@
+ofxDelaunay
+ofxGui
+ofxKinect
+ofxOpenCv
+ofxPostProcessing
