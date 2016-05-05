@@ -4,7 +4,6 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-  ofSetFrameRate(30);
   kinect.init();
   
   kinect.open();
@@ -27,8 +26,8 @@ void ofApp::setup(){
   showGui = true;
   
   bThreshWithOpenCV = true;
-  nearThreshold = 255;
-  farThreshold = 200;
+  nearThreshold = 1;
+  farThreshold = 255;
   kinect.setLed(ofxKinect::LED_OFF);
   angle = -50;
   kinect.setCameraTiltAngle(angle);
@@ -41,6 +40,8 @@ void ofApp::setup(){
   
   ofSetFrameRate(60);
   
+  topleft = 1;
+  
   
   //soundPlayer.loadSound("song.wav");
   //soundPlayer.play();
@@ -51,7 +52,7 @@ void ofApp::setup(){
   // 256 samples per buffer
   // 4 num buffers (latency)
   
-  soundStream.printDeviceList();
+  //soundStream.printDeviceList();
   
   //if you want to set a different device id
   //soundStream.setDeviceID(0); //bear in mind the device id corresponds to all audio devices, including  input-only and output-only devices.
@@ -65,14 +66,13 @@ void ofApp::setup(){
   
   bufferCounter	= 0;
   drawCounter		= 0;
-  smoothedVol     = 0.0;
+  smoothedVol   = 0.0;
   scaledVol		= 0.0;
   
-  soundStream.setup(this, 0, 2, 44100, bufferSize, 4);
+  //soundStream.setup(this, 0, 2, 44100, bufferSize, 4);
   
   decayRate = 0.05;
   minimumThreshold = 0.2;
-  noiseAmount = 2.0;
   
   current_msg_string = 0;
   cout << "listening for osc messages on port " << PORT << "\n";
@@ -86,6 +86,8 @@ void ofApp::setup(){
 void ofApp::update(){
   
   kinect.update();
+  
+  noiseAmount = newnoise;
   
   // hide old messages
   for (int i = 0; i < NUM_MSG_STRINGS; i++) {
@@ -101,11 +103,37 @@ void ofApp::update(){
     receiver.getNextMessage(&m);
     
     // check for mouse moved message
-    if (m.getAddress() == "/interface") {
+    if (m.getAddress() == "/pot1") {
       // both the arguments are int32's
-      data = m.getArgAsInt32(0);
-      cout << "OSC received: " << m.getArgAsInt32(0) << endl;
+      pot1 = m.getArgAsInt32(0);
+      newpot1 = 1;
+      newpot1 = ofMap(pot1, 0, 1023, 1, 100);
+      // cout << "OSC received: " << m.getArgAsInt32(0) << endl;
     }
+    
+    if (m.getAddress() == "/pot2") {
+      // both the arguments are int32's
+      pot2 = m.getArgAsInt32(0);
+      newpot2 = 1;
+      newpot2 = ofMap(pot2, 0, 1023, 1, 100);
+      // cout << "OSC received: " << m.getArgAsInt32(0) << endl;
+    }
+    
+    if (m.getAddress() == "/topright") {
+      // both the arguments are int32's
+      topright = m.getArgAsInt32(0);
+      newnoise = ofMap(topright, 0, 2000, 0, 1);
+      // cout << "OSC received: " << m.getArgAsInt32(0) << endl;
+    }
+    
+    if (m.getAddress() == "/topleft") {
+      // both the arguments are int32's
+      topleft = m.getArgAsInt32(0);
+      //newalpha = 0.9;
+      newalpha = ofMap(topleft, 0, 2000, 0.01, 0.4);
+      // cout << "OSC received: " << m.getArgAsInt32(0) << endl;
+    }
+    
   }
   
   // OLD EXAMPLE --------------------------------------------------------------
@@ -159,7 +187,7 @@ void ofApp::update(){
         int pIndex = x + y * 640;
         pix[pIndex] = 0;
         
-        if(distance > (1 * nearThreshold) && distance < (100 * farThreshold)) {
+        if(distance > (newpot1 * nearThreshold) && distance < (newpot2 * farThreshold)) {
           pix[pIndex] = 255;
         }
         
@@ -218,7 +246,7 @@ void ofApp::update(){
       if(!useRealColors)
         c = ofColor(255); //fill color
       
-      c.a = colorAlpha;
+      c.a = colorAlpha * newalpha;
       
       del.triangleMesh.setColor(del.triangleMesh.getIndex(i*3),c);
       del.triangleMesh.setColor(del.triangleMesh.getIndex(i*3+1),c);
@@ -437,13 +465,13 @@ void ofApp::audioIn(float * input, int bufferSize, int nChannels) {
   if(rms > threshold) {
     // onset detected!
     threshold = rms;
-    noiseAmount = 20;
+    //noiseAmount = 20;
   }
-  else{
-    while (noiseAmount >= 0)
-      noiseAmount -= 0.000001;
-      noiseAmount *= decayRate;
-  }
+//  else{
+//    while (noiseAmount >= 0)
+//      noiseAmount -= 0.000001;
+//      noiseAmount *= decayRate;
+//  }
 }
 
 void ofApp::exit() {

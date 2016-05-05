@@ -37,7 +37,15 @@ public:
   
   ofxPostProcessing postFx;
   
-  int data;
+  int pot1;
+  int pot2;
+  int newpot1;
+  int newpot2;
+  
+  int topright;
+  int topleft;
+  float newnoise;
+  float newalpha;
   
   // gui
   bool showGui;
