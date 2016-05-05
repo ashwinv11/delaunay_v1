@@ -12,17 +12,17 @@ void ofApp::setup(){
   
   blob.allocate(640,480,OF_IMAGE_GRAYSCALE);
   
-  
   // Gui
   gui.setup();
   gui.setPosition(ofPoint(10,10));
+  
   //gui.add(noiseAmount.setup("Noise Amount", 0.0, 0.0,20.0));
   gui.add(pointSkip.setup("Point Skip", 1, 1,20));
   gui.add(useRealColors.setup("Real Colors", false));
   gui.add(colorAlpha.setup("Color Alpha", 0,0,255));
   gui.add(stepOffset.set("use step offset", true));
-  gui.add(nearThreshold.set( "near threshold", 255, 0, 255 ));
-  gui.add(farThreshold.set( "far threshold", 200, 0, 255 ));
+  gui.add(nearThreshold.set( "near threshold", 1, 1, 255 ));
+  gui.add(farThreshold.set( "far threshold", 1, 1, 255 ));
   gui.loadFromFile("settings.xml");
   showGui = true;
   
@@ -30,7 +30,7 @@ void ofApp::setup(){
   nearThreshold = 255;
   farThreshold = 200;
   kinect.setLed(ofxKinect::LED_OFF);
-  angle = -10;
+  angle = -50;
   kinect.setCameraTiltAngle(angle);
   
   // fx
@@ -42,8 +42,8 @@ void ofApp::setup(){
   ofSetFrameRate(60);
   
   
-  soundPlayer.loadSound("song.wav");
-  soundPlayer.play();
+  //soundPlayer.loadSound("song.wav");
+  //soundPlayer.play();
   
   // 0 output channels,
   // 2 input channels
@@ -74,6 +74,10 @@ void ofApp::setup(){
   minimumThreshold = 0.2;
   noiseAmount = 2.0;
   
+  current_msg_string = 0;
+  cout << "listening for osc messages on port " << PORT << "\n";
+  receiver.setup(PORT);
+  
 }
 
 
@@ -82,6 +86,27 @@ void ofApp::setup(){
 void ofApp::update(){
   
   kinect.update();
+  
+  // hide old messages
+  for (int i = 0; i < NUM_MSG_STRINGS; i++) {
+    if (timers[i] < ofGetElapsedTimef()){
+      msg_strings[i] = "";
+    }
+  }
+  
+  // check for waiting messages
+  while(receiver.hasWaitingMessages()) {
+    // get the next message
+    ofxOscMessage m;
+    receiver.getNextMessage(&m);
+    
+    // check for mouse moved message
+    if (m.getAddress() == "/interface") {
+      // both the arguments are int32's
+      data = m.getArgAsInt32(0);
+      cout << "OSC received: " << m.getArgAsInt32(0) << endl;
+    }
+  }
   
   // OLD EXAMPLE --------------------------------------------------------------
   
@@ -134,7 +159,7 @@ void ofApp::update(){
         int pIndex = x + y * 640;
         pix[pIndex] = 0;
         
-        if(distance > 100 && distance < 1100) {
+        if(distance > (1 * nearThreshold) && distance < (100 * farThreshold)) {
           pix[pIndex] = 255;
         }
         

@@ -1,11 +1,11 @@
 <group>
 	<Noise_Amount>0</Noise_Amount>
-	<Point_Skip>6</Point_Skip>
+	<Point_Skip>4</Point_Skip>
 	<Real_Colors>0</Real_Colors>
-	<Color_Alpha>0</Color_Alpha>
+	<Color_Alpha>2</Color_Alpha>
 <group/>
 	<use_step_offset>1</use_step_offset>
-	<near_threshold>255</near_threshold>
-	<far_threshold>200</far_threshold>
+	<near_threshold>1</near_threshold>
+	<far_threshold>255</far_threshold>
 	<step_value>8</step_value>
 </group>

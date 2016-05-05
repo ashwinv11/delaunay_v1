@@ -6,6 +6,10 @@
 #include "ofxDelaunay.h"
 #include "ofxPostProcessing.h"
 #include "ofxOpenCv.h"
+#include "ofxOsc.h"
+
+#define PORT 12001
+#define NUM_MSG_STRINGS 20
 
 
 class ofApp : public ofBaseApp{
@@ -32,6 +36,8 @@ public:
   ofEasyCam cam;
   
   ofxPostProcessing postFx;
+  
+  int data;
   
   // gui
   bool showGui;
@@ -80,5 +86,11 @@ public:
   float minimumThreshold;
   float decayRate;
   
+private:
+		ofxOscReceiver	 receiver;
+  
+		int	current_msg_string;
+		string	 msg_strings[NUM_MSG_STRINGS];
+		float	timers[NUM_MSG_STRINGS];
   
 };
