@@ -101,7 +101,7 @@ fun void irBanger(int sensorIndex, dur sampleTime, int Threshold)
         if( Derivative > Threshold )
         {
             irBang.broadcast();
-            <<<" Bang... IR " >>>;
+            //<<<" Bang... IR " >>>;
             500::ms => now;  //allow one bang every 500 ms. 
         } 
         
@@ -134,11 +134,29 @@ fun void oscSensor(dur samplerate)
     while( true )
     {
         // create OSC message
-        xmit.startMsg("/interface",typetag);
+        xmit.startMsg("/pot1", typetag);
         for( 0 => int i; i < sensor.cap(); i++)
         {
-            sensor[i] => xmit.addInt;
+            data[0] => xmit.addInt;
         } 
+
+        xmit.startMsg("/pot2", typetag);
+        for( 0 => int i; i < sensor.cap(); i++)
+        {
+            data[1] => xmit.addInt;
+        }
+
+        xmit.startMsg("/topright", typetag);
+        for( 0 => int i; i < sensor.cap(); i++)
+        {
+            data[2] => xmit.addInt;
+        }
+
+        xmit.startMsg("/topleft", typetag);
+        for( 0 => int i; i < sensor.cap(); i++)
+        {
+            data[3] => xmit.addInt;
+        }  
         
         samplerate => now;
     }
@@ -147,7 +165,7 @@ fun void oscSensor(dur samplerate)
 
 fun void initOsc()
 {
-  spork ~ oscSensor(100::ms);
+  spork ~ oscSensor(1000::ms);
 }
 
 // STUFF
@@ -158,10 +176,47 @@ initSerial();
 initOsc();
 initSignalCondition();
 
+// n channels
+dac.channels() => int N;
+// print
+<<< "dac has", N, "channels..." >>>;
+
+// delays
+DelayL d[N];
+// gains
+Gain g3[N];
+
+// our patch - feedforward part
+adc => Gain g;
+adc => Gain g2 => GVerb v => dac;
+
+// set delays
+for( int i; i < N; i++ )
+{
+    // feedfoward
+    g => d[i] => dac.chan(i);
+    // feedback
+    d[i] => g3[i] => d[i];
+    // detune
+    30::ms + Math.random2f(-15,15)::ms => d[i].max => d[i].delay;
+    .95 => g3[i].gain;
+}
+
+// set parameters
+0.25 => g.gain;
+0.05 => g2.gain;
+0.25 => v.gain;
+
 // MOVE THIS -- This will be the Art part
 while (true)
 {
-    <<< data[0], "\t",  data[1], "\t", data[2], "\t", data[3], "\t",  data[4], "\t", data[5], "\t", sensorClean[1], "\t", data[4], "\t", sensorClean[2] >>>;
-    
+    //<<< data[0], "\t", sensorClean[0], "\t", data[1], "\t", sensorClean[1] >>>;
+    //<<< data[0], "\t",  data[1], "\t", data[2], "\t", data[3], "\t",  data[4], "\t", data[5], "\t", sensorClean[1], "\t", data[4], "\t", sensorClean[2] >>>;
+    //<<< data[4], "\t", data[5] >>>;
+
+    0.005 * data[4] => g.gain;
+    0.005 * data[5] => g2.gain;
+    v.tail(100 / (data[4] + 1));
+
     .05::second => now;
 }
